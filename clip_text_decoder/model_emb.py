@@ -172,7 +172,7 @@ def test_decoder():
     get_tokenizer = lru_cache()(load_tokenizer)
     batch_size = 2
     seq_length = 10
-    hidden_dim = 512
+    hidden_dim = 1024
 
     # Create dummy data
     encoder_hidden_states = torch.randn(batch_size, 1, hidden_dim)
