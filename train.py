@@ -76,6 +76,7 @@ def show_sample_predictions(
 
     for encoding, captions in subset:
         pred = model(torch.from_numpy(encoding), beam_size=beam_size)
+        print(f'Cossim: {cossim}')
         print(f"Pred: {pred}")
         print(f"True: {captions}")
 
