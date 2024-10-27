@@ -77,13 +77,14 @@ class DecoderEmbedding(LightningModule):
         encoder_hidden_states: Tensor,
         attention_mask: Optional[Tensor] = None,
     ):
+        target_dim = 768
         batch_size, _, num_features = encoder_hidden_states.shape
         hidden = torch.zeros(
-            size=(batch_size, 1, 768),
+            size=(batch_size, 1, target_dim),
             dtype=encoder_hidden_states.dtype,
             device=encoder_hidden_states.device,
         )
-        hidden[:, :, :num_features] = encoder_hidden_states
+        hidden = encoder_hidden_states[:, :, :target_dim]
 
         # Generate text
         outputs = self.language_model(
