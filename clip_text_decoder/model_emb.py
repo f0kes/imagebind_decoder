@@ -8,6 +8,11 @@ import os
 import tempfile
 from typing import Callable, List, Optional, Tuple, Union
 from imagebind.models.imagebind_model import ImageBindModel, ModalityType
+from imagebind.models.multimodal_preprocessors import (
+    SimpleTokenizer,
+    TextPreprocessor,
+)
+
 import gdown
 import torch
 import torch.nn.functional as F
@@ -24,7 +29,13 @@ from clip_text_decoder.common import (
     load_language_model,
     load_vision_backbone,
 )
+BPE_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "bpe",
+    "bpe_simple_vocab_16e6.txt.gz",
+)
 
+TOKENIZER = SimpleTokenizer(bpe_path=BPE_PATH)
 
 def load_and_transform_text(text, device):
     if text is None:
@@ -88,7 +99,7 @@ class DecoderEmbedding(LightningModule):
         ]
         if isinstance(self.vision_backbone[0], ImageBindModel):
             inputs = {
-                ModalityType.TEXT: data.load_and_transform_text(
+                ModalityType.TEXT: load_and_transform_text(
                     generated_text, self.device
                 ),
             }
