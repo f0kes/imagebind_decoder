@@ -172,7 +172,7 @@ def test_decoder():
     get_tokenizer = lru_cache()(load_tokenizer)
     batch_size = 2
     seq_length = 10
-    hidden_dim = 1024
+    hidden_dim = 768
 
     # Create dummy data
     encoder_hidden_states = torch.randn(batch_size, 1, hidden_dim)
@@ -217,7 +217,7 @@ def test_decoder():
     print(f"Result embedding shape: {result_embedding.shape}")
     print(f"Logits shape: {logits.shape}")
 
-    print(f"Error during forward pass: {str(e)}")
+    
 
 
 if __name__ == "__main__":
