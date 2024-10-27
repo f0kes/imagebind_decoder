@@ -29,6 +29,7 @@ from clip_text_decoder.common import (
     load_language_model,
     load_vision_backbone,
 )
+
 BPE_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "bpe",
@@ -36,6 +37,7 @@ BPE_PATH = os.path.join(
 )
 
 TOKENIZER = SimpleTokenizer(bpe_path=BPE_PATH)
+
 
 def load_and_transform_text(text, device):
     if text is None:
@@ -77,11 +79,11 @@ class DecoderEmbedding(LightningModule):
     ):
         batch_size, _, num_features = encoder_hidden_states.shape
         hidden = torch.zeros(
-            size=(batch_size, 1, 1024),
+            size=(batch_size, 1, 768),
             dtype=encoder_hidden_states.dtype,
             device=encoder_hidden_states.device,
         )
-        hidden[:, :, :num_features] = encoder_hidden_states
+        hidden[:, :, :num_features] = encoder_hidden_states[:, :, :num_features]
 
         # Generate text
         outputs = self.language_model(
@@ -95,7 +97,11 @@ class DecoderEmbedding(LightningModule):
 
         # Convert ids to text and get CLIP embeddings
         generated_text = [
-            " ".join(self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True))
+            " ".join(
+                self.tokenizer.batch_decode(
+                    generated_ids, skip_special_tokens=True
+                )
+            )
         ]
         if isinstance(self.vision_backbone[0], ImageBindModel):
             inputs = {
@@ -201,13 +207,12 @@ def test_decoder():
     )
 
     # 4. Run training
-    
+
     trainer.fit(model, train_loader, val_loader)
     print("Training completed successfully!")
-    
 
     # 5. Test forward pass
-    
+
     result_embedding, logits = model(
         input_ids=input_ids,
         encoder_hidden_states=encoder_hidden_states,
@@ -216,8 +221,6 @@ def test_decoder():
     print("\nForward pass successful!")
     print(f"Result embedding shape: {result_embedding.shape}")
     print(f"Logits shape: {logits.shape}")
-
-    
 
 
 if __name__ == "__main__":
