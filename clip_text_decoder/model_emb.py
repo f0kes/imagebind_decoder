@@ -2,11 +2,12 @@ from __future__ import annotations
 import torch
 from pytorch_lightning import Trainer
 from torch.utils.data import DataLoader, TensorDataset
-
+from clip_text_decoder.common import load_tokenizer
+from functools import lru_cache
 import os
 import tempfile
 from typing import Callable, List, Optional, Tuple, Union
-
+from imagebind.models.imagebind_model import ImageBindModel, ModalityType
 import gdown
 import torch
 import torch.nn.functional as F
@@ -27,6 +28,7 @@ from clip_text_decoder.common import (
 class DecoderEmbedding(LightningModule):
     def __init__(
         self,
+        tokeniser: GPT2Tokenizer,
         vision_backbone: str = "blip:base",
         language_model: str = "distilgpt2",
         device: Optional[Union[str, torch.device]] = None,
@@ -36,12 +38,14 @@ class DecoderEmbedding(LightningModule):
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self.save_hyperparameters()
-
-        self.vision_backbone = vision_backbone
+        check_vision_backbone(vision_backbone)
+        self.vision_backbone = load_vision_backbone(
+            vision_backbone, device=device
+        )
 
         check_language_model(language_model)
         self.language_model = load_language_model(language_model, device=device)
-
+        self.tokenizer = tokeniser
         self.cosine_loss = nn.CosineEmbeddingLoss()
         self.to(device)
 
@@ -73,9 +77,15 @@ class DecoderEmbedding(LightningModule):
         generated_text = self.tokenizer.batch_decode(
             generated_ids, skip_special_tokens=True
         )
-        result_embedding = self.vision_backbone.encode_text(generated_text)
+        if isinstance(self.vision_backbone, ImageBindModel):
+            inputs = {
+                ModalityType.TEXT: generated_text,
+            }
+            embeddings = self.vision_backbone(inputs)
 
-        return result_embedding, outputs.logits
+            return embeddings, outputs.logits
+        else:
+            raise NotImplemented
 
     def configure_optimizers(self):
         return optim.AdamW(self.parameters(), lr=1e-4)
@@ -135,6 +145,8 @@ class DecoderEmbedding(LightningModule):
 
 def test_decoder():
     # 1. Create minimal test data
+
+    get_tokenizer = lru_cache()(load_tokenizer)
     batch_size = 2
     seq_length = 10
     hidden_dim = 512
@@ -153,6 +165,7 @@ def test_decoder():
     model = DecoderEmbedding(
         vision_backbone="imagebind",  # or use the smallest available model
         language_model="distilgpt2",
+        tokeniser=get_tokenizer("distilgpt2"),
     )
 
     # 3. Create trainer with minimal settings
