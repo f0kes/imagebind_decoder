@@ -77,15 +77,16 @@ class DecoderEmbedding(LightningModule):
         generated_text = self.tokenizer.batch_decode(
             generated_ids, skip_special_tokens=True
         )
-        if isinstance(self.vision_backbone, ImageBindModel):
+        if isinstance(self.vision_backbone[0], ImageBindModel):
             inputs = {
                 ModalityType.TEXT: generated_text,
             }
-            embeddings = self.vision_backbone(inputs)
+            embeddings = self.vision_backbone[0](inputs)
 
             return embeddings, outputs.logits
         else:
-            raise NotImplemented
+            text_features = self.vision_backbone.encode_text(generated_text)
+            return text_features, outputs.logits
 
     def configure_optimizers(self):
         return optim.AdamW(self.parameters(), lr=1e-4)
