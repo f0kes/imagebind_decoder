@@ -35,8 +35,10 @@ setup(
         "torchvision",
         "transformers",
         "wget",
-        'git+https://github.com/omegalabsinc/ImageBind.git@e2bfdec716b1c1d511d6bea806227b2b3dfcadee#egg=imagebind',
-
+        
+    ],
+    dependency_links=[
+        "https://github.com/omegalabsinc/ImageBind/tarball/e2bfdec716b1c1d511d6bea806227b2b3dfcadee#egg=imagebind-0.0.1",
     ],
     extras_require={
         "test": [
