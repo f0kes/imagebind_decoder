@@ -179,24 +179,23 @@ def test_decoder():
     )
 
     # 4. Run training
-    try:
-        trainer.fit(model, train_loader, val_loader)
-        print("Training completed successfully!")
-    except Exception as e:
-        print(f"Error during training: {str(e)}")
+    
+    trainer.fit(model, train_loader, val_loader)
+    print("Training completed successfully!")
+    
 
     # 5. Test forward pass
-    try:
-        result_embedding, logits = model(
-            input_ids=input_ids,
-            encoder_hidden_states=encoder_hidden_states,
-            attention_mask=attention_mask,
-        )
-        print("\nForward pass successful!")
-        print(f"Result embedding shape: {result_embedding.shape}")
-        print(f"Logits shape: {logits.shape}")
-    except Exception as e:
-        print(f"Error during forward pass: {str(e)}")
+    
+    result_embedding, logits = model(
+        input_ids=input_ids,
+        encoder_hidden_states=encoder_hidden_states,
+        attention_mask=attention_mask,
+    )
+    print("\nForward pass successful!")
+    print(f"Result embedding shape: {result_embedding.shape}")
+    print(f"Logits shape: {logits.shape}")
+
+    print(f"Error during forward pass: {str(e)}")
 
 
 if __name__ == "__main__":
