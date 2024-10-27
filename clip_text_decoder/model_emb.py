@@ -83,7 +83,7 @@ class DecoderEmbedding(LightningModule):
             dtype=encoder_hidden_states.dtype,
             device=encoder_hidden_states.device,
         )
-        hidden[:, :, :num_features] = encoder_hidden_states[:, :, :num_features]
+        hidden[:, :, :num_features] = encoder_hidden_states
 
         # Generate text
         outputs = self.language_model(
