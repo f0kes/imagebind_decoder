@@ -115,7 +115,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--eval-only", action="store_true")
     args = parser.parse_args()
-
+    torch.set_float32_matmul_precision("high")
     seed_everything(args.seed)
 
     if args.checkpoint:
