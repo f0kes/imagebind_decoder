@@ -77,7 +77,7 @@ class DecoderEmbedding(LightningModule):
     ):
         batch_size, _, num_features = encoder_hidden_states.shape
         hidden = torch.zeros(
-            size=(batch_size, 1, 768),
+            size=(batch_size, 1, 1024),
             dtype=encoder_hidden_states.dtype,
             device=encoder_hidden_states.device,
         )
@@ -172,7 +172,7 @@ def test_decoder():
     get_tokenizer = lru_cache()(load_tokenizer)
     batch_size = 2
     seq_length = 10
-    hidden_dim = 768
+    hidden_dim = 1024
 
     # Create dummy data
     encoder_hidden_states = torch.randn(batch_size, 1, hidden_dim)
