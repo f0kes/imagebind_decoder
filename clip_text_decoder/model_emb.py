@@ -15,6 +15,7 @@ from PIL import Image
 from pytorch_lightning import LightningModule
 from torch import Tensor, nn, optim
 from transformers import GPT2Tokenizer
+from imagebind import data
 
 from clip_text_decoder.common import (
     check_language_model,
@@ -23,6 +24,14 @@ from clip_text_decoder.common import (
     load_language_model,
     load_vision_backbone,
 )
+
+
+def load_and_transform_text(text, device):
+    if text is None:
+        return None
+    tokens = [TOKENIZER(t).unsqueeze(0).to(device) for t in text]
+    tokens = torch.cat(tokens, dim=0)
+    return tokens
 
 
 class DecoderEmbedding(LightningModule):
@@ -74,12 +83,14 @@ class DecoderEmbedding(LightningModule):
         generated_ids = torch.argmax(outputs.logits, dim=-1)
 
         # Convert ids to text and get CLIP embeddings
-        generated_text = self.tokenizer.batch_decode(
-            generated_ids, skip_special_tokens=True
-        )
+        generated_text = [
+            " ".join(self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True))
+        ]
         if isinstance(self.vision_backbone[0], ImageBindModel):
             inputs = {
-                ModalityType.TEXT: generated_text,
+                ModalityType.TEXT: data.load_and_transform_text(
+                    generated_text, self.device
+                ),
             }
             embeddings = self.vision_backbone[0](inputs)
 
