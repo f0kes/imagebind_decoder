@@ -1,0 +1,41 @@
+name: Test
+
+on:
+  workflow_dispatch: {}
+  push: {}
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    continue-on-error: false
+
+    strategy:
+      matrix:
+        python: ["3.7", "3.8", "3.9"]
+        torch: ["1.11", "1.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install Package
+        run: |
+          pip install "lavis @ git+https://github.com/salesforce/LAVIS.git"
+          pip install \
+            .[test] \
+            torch~=${{ matrix.torch }}.0 \
+            "clip @ git+https://github.com/openai/CLIP.git"
+          python -m spacy download en_core_web_sm
+
+      - name: Test
+        run: |
+          pytest --cov --cov-report term-missing tests/
+          black --check .
+          isort --diff .
+          flake8 .
