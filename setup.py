@@ -9,7 +9,7 @@ def get_version_tag() -> str:
     try:
         version = os.environ["CLIP_TEXT_DECODER_VERSION"]
     except KeyError:
-        version = "nice version"
+        version = "1.0.0"
 
     return version
 
