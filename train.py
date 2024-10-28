@@ -76,7 +76,7 @@ def show_sample_predictions(
 
     for encoding, captions in subset:
         pred = model(torch.from_numpy(encoding), beam_size=beam_size)
-        print(f'Cossim: {cossim}')
+        
         print(f"Pred: {pred}")
         print(f"True: {captions}")
 
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--vision-backbone", type=str, default="blip:base")
+    parser.add_argument("--vision-backbone", type=str, default="imagebind")
     parser.add_argument("--language-model", type=str, default="distilgpt2")
     parser.add_argument("--beam-size", type=int, default=1)
     parser.add_argument("--max-epochs", type=int, default=10)

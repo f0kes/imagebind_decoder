@@ -110,7 +110,7 @@ class DecoderEmbedding(LightningModule):
                     generated_text, self.device
                 ),
             }
-            embeddings = self.vision_backbone[0](inputs)
+            embeddings = self.vision_backbone[0].embed_text([generated_text])
 
             return embeddings[ModalityType.TEXT], outputs.logits
         else:
