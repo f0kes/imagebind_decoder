@@ -32,7 +32,7 @@ setup(
         "spacy",
         "torch==2.0.0",
         "torchdata==0.6.0",
-        "torchvision==0.15.0"
+        "torchvision==0.15.0",
         "transformers==4.26.1",
         "wget",
     ],
