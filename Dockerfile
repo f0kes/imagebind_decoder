@@ -34,12 +34,12 @@ RUN pip install --no-cache-dir -r requirements_no_torch.txt
 RUN apt-get update && apt-get install -y git && apt-get clean
 RUN pip install git+https://github.com/omegalabsinc/ImageBind@e2bfdec716b1c1d511d6bea806227b2b3dfcadee#egg=imagebind-0.0.1
 RUN pip install "clip @ git+https://github.com/openai/CLIP.git"
-
+RUN pip install regex==2017.4.5
 
 # Copy application code
 COPY . .
 
-RUN pip install regex==2017.4.5
+
 # Expose port
 EXPOSE 8000
 
