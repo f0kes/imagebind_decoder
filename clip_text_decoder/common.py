@@ -7,7 +7,7 @@ from imagebind.models.imagebind_model import ImageBindModel, ModalityType
 import clip
 import torch
 from clip.model import CLIP
-from lavis.models import BlipFeatureExtractor, load_model_and_preprocess
+
 from PIL import Image
 from torch import Tensor, nn
 from transformers import GPT2Config, GPT2LMHeadModel, GPT2Tokenizer
@@ -92,15 +92,7 @@ def load_vision_backbone(
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    if backbone == VisionBackbones.blip_base.value:
-        model, preprocessors, _ = load_model_and_preprocess(
-            "blip_feature_extractor",
-            model_type="base",
-            is_eval=True,
-            device=device,
-        )
-        return model, preprocessors["eval"]
-    elif backbone == VisionBackbones.imagebind.value:
+    if backbone == VisionBackbones.imagebind.value:
         # we mast return
         #   model: nn.Module
         #   preprocessor: Callable[[Image.Image], Tensor]
@@ -123,9 +115,7 @@ def load_vision_backbone(
 
 
 def encode_image_tensor(image: Tensor, backbone: nn.Module) -> Tensor:
-    if isinstance(backbone, BlipFeatureExtractor):
-        features = backbone.extract_features({"image": image}, mode="image")
-        return features.image_embeds[:, 0]
+
     if isinstance(backbone, ImageBindModel):
         inputs = {
             ModalityType.VISION: image,
