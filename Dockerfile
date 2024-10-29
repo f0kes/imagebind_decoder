@@ -24,7 +24,7 @@ WORKDIR /app
 
 # Install PyTorch with CUDA support first
 RUN pip install torch==2.0.0+cu117 torchvision==0.15.0+cu117 torchaudio==2.0.0+cu117 --extra-index-url https://download.pytorch.org/whl/cu117
-
+RUN pip install torchdata==0.6.0 pytorch-lightning==2.3.0
 # Install other dependencies
 COPY requirements.txt .
 # Remove torch-related packages from requirements.txt if they exist
