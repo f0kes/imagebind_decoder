@@ -27,15 +27,14 @@ setup(
     install_requires=[
         "evaluate",
         "gdown",
-        "numpy",
-        "pytorch-lightning",
+        "numpy==1.26.4",
+        "pytorch-lightning==2.3.0",
         "spacy",
-        "torch>=1.11",
-        "torchdata>=0.3.0",
-        "torchvision",
-        "transformers",
+        "torch==2.0.0",
+        "torchdata==0.6.0",
+        "torchvision==0.15.2",
+        "transformers==4.26.1",
         "wget",
-        
     ],
     dependency_links=[
         "https://github.com/omegalabsinc/ImageBind/tarball/e2bfdec716b1c1d511d6bea806227b2b3dfcadee#egg=imagebind-0.0.1",
