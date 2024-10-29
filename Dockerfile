@@ -1,5 +1,6 @@
 # Use NVIDIA CUDA base image with Python
 FROM nvidia/cuda:11.7.1-cudnn8-runtime-ubuntu20.04
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install Python and pip
 RUN apt-get update && apt-get install -y \
