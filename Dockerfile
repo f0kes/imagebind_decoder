@@ -30,6 +30,8 @@ COPY requirements.txt .
 # Remove torch-related packages from requirements.txt if they exist
 RUN grep -v "torch" requirements.txt > requirements_no_torch.txt || true
 RUN pip install --no-cache-dir -r requirements_no_torch.txt
+
+RUN apt-get update && apt-get install -y git && apt-get clean
 RUN pip install git+https://github.com/omegalabsinc/ImageBind@e2bfdec716b1c1d511d6bea806227b2b3dfcadee#egg=imagebind-0.0.1
 
 
