@@ -6,6 +6,13 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./lightning_logs:/models  
+      - ./lightning_logs:/models
     environment:
       - CHECKPOINT_PATH=/models/version_1/model.pt
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
