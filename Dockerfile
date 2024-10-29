@@ -13,6 +13,12 @@ RUN apt-get update && apt-get install -y \
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1
 RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
+RUN ln -sf /usr/bin/python3.9 /usr/bin/python3 && \
+    ln -sf /usr/bin/python3.9 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip
+
+RUN python --version
+
 # Set working directory
 WORKDIR /app
 
