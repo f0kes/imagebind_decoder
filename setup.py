@@ -30,7 +30,7 @@ setup(
         "numpy==1.26.4",
         "pytorch-lightning==2.3.0",
         "spacy",
-        "torch==2.0.0",
+        "torch==2.0.0+cu117",
         "torchdata==0.6.0",
         "torchvision==0.15.0",
         "transformers==4.26.1",
