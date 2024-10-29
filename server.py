@@ -4,7 +4,7 @@ import torch
 import os
 from clip_text_decoder.model import DecoderInferenceModel
 from clip_text_decoder.common import load_tokenizer
-
+from typing import Optional
 app = FastAPI()
 
 decoder = None
@@ -12,7 +12,7 @@ decoder = None
 
 # Define a Pydantic model for request validation
 class LoadModelRequest(BaseModel):
-    checkpoint_path: str | None = None
+    checkpoint_path: Optional[str]  = None
 
 
 class PredictRequest(BaseModel):
