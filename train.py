@@ -103,7 +103,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--vision-backbone", type=str, default="blip:base")
+    parser.add_argument("--vision-backbone", type=str, default="imagebind")
     parser.add_argument("--language-model", type=str, default="distilgpt2")
     parser.add_argument("--beam-size", type=int, default=1)
     parser.add_argument("--max-epochs", type=int, default=10)
@@ -144,6 +144,9 @@ if __name__ == "__main__":
         )
 
         train_dataset = load_coco_captions(args.vision_backbone, split="train")
+        first_embedding = next(iter(train_dataset))[0]
+        print(f"Embedding size: {first_embedding.shape}")
+        
         val_dataset = load_coco_captions(args.vision_backbone, split="val")
         # Train the model, and then load the best-performing state dictionary.
         trainer.fit(
