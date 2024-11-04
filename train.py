@@ -22,7 +22,7 @@ get_tokenizer = lru_cache()(load_tokenizer)
 
 @lru_cache()
 def load_coco_captions(
-    vision_backbone: str = "blip:base", split: str = "train"
+    vision_backbone: str = "imagebind", split: str = "train"
 ) -> CocoCaptionsDataset:
     return CocoCaptionsDataset.build(vision_backbone=vision_backbone, split=split)
 
