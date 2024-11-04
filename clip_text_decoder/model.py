@@ -31,6 +31,8 @@ class Decoder(LightningModule):
         self,
         vision_backbone: str = "blip:base",
         language_model: str = "distilgpt2",
+        input_dim: int = 1024,
+        hidden_dim: int = 768,
         device: Optional[Union[str, torch.device]] = None,
     ):
         super().__init__()
@@ -38,10 +40,17 @@ class Decoder(LightningModule):
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self.save_hyperparameters()
-        
+
         self.vision_backbone = vision_backbone
         check_language_model(language_model)
         self.language_model = load_language_model(language_model, device=device)
+        self.projection = nn.Sequential(
+            nn.Linear(input_dim, (input_dim + hidden_dim) // 2),
+            nn.LayerNorm((input_dim + hidden_dim) // 2),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear((input_dim + hidden_dim) // 2, hidden_dim),
+        )
 
         self.to(device)
 
@@ -60,10 +69,11 @@ class Decoder(LightningModule):
             device=encoder_hidden_states.device,
         )
         hidden[:, :, :num_features] = encoder_hidden_states
+        projected_states = self.projection(encoder_hidden_states)
 
         return self.language_model(
             input_ids=input_ids,
-            encoder_hidden_states=hidden,
+            encoder_hidden_states=projected_states,
             attention_mask=attention_mask,
             labels=labels,
         )
@@ -90,7 +100,9 @@ class Decoder(LightningModule):
         return result.loss
 
     @torch.no_grad()
-    def validation_step(self, batch: Tuple[Tensor, Tensor, Tensor], *_) -> Tensor:
+    def validation_step(
+        self, batch: Tuple[Tensor, Tensor, Tensor], *_
+    ) -> Tensor:
         encoder_hidden_states, input_ids, attention_mask = batch
         result = self.forward(
             input_ids=input_ids,
@@ -165,10 +177,14 @@ class DecoderInferenceModel:
         # Since we haven't performed any beam search steps yet, we just have one
         # set of input IDs (with a single "start" token). We use 'None' for the log
         # probability of this sequence, since it's not being predicted by the model.
-        input_ids = [torch.tensor([self.tokenizer.bos_token_id], device=self.device)]
+        input_ids = [
+            torch.tensor([self.tokenizer.bos_token_id], device=self.device)
+        ]
         beam_logprobs: Optional[List[float]] = None
 
-        def _get_beam_outputs(_input_ids: Tensor) -> Tuple[List[Tensor], Tensor]:
+        def _get_beam_outputs(
+            _input_ids: Tensor,
+        ) -> Tuple[List[Tensor], Tensor]:
             """Performs inference on the 'input_ids' Tensor, and collects the top
             'beam_size' results by score. Returns a list of output Tensors, and
             their respective log-probabilities.
@@ -181,7 +197,8 @@ class DecoderInferenceModel:
             indices = topk_logprobs.indices
             logprobs = topk_logprobs.values
             output_ids = [
-                torch.cat([_input_ids, idx.reshape(-1)], dim=0) for idx in indices
+                torch.cat([_input_ids, idx.reshape(-1)], dim=0)
+                for idx in indices
             ]
 
             return output_ids, logprobs
@@ -196,7 +213,10 @@ class DecoderInferenceModel:
                 # If 'beam_logprobs' is already defined, then we've predicted at least
                 # one token already. And if the last token is equal to the "stop" token,
                 # we don't need to perform inference with this beam anymore.
-                if beam_logprobs and ids[-1].item() == self.tokenizer.eos_token_id:
+                if (
+                    beam_logprobs
+                    and ids[-1].item() == self.tokenizer.eos_token_id
+                ):
                     output_ids.append(ids)
                     logprobs.append(beam_logprobs[beam_idx])
                     beams_done.append(True)
@@ -225,7 +245,9 @@ class DecoderInferenceModel:
         # Find the predicted beam with highest overall log-probability.
         best_beam_idx: int = torch.tensor(beam_logprobs).argmax().item()  # type: ignore
         # Decode the predicted token IDs into a text string.
-        return self.tokenizer.decode(input_ids[best_beam_idx], skip_special_tokens=True)
+        return self.tokenizer.decode(
+            input_ids[best_beam_idx], skip_special_tokens=True
+        )
 
 
 class ImageCaptionInferenceModel(DecoderInferenceModel):
@@ -235,7 +257,9 @@ class ImageCaptionInferenceModel(DecoderInferenceModel):
         self._preprocessor: Optional[Callable] = None
 
     def _load_vision_backbone(self):
-        backbone, preprocessor = load_vision_backbone(self.model.vision_backbone)
+        backbone, preprocessor = load_vision_backbone(
+            self.model.vision_backbone
+        )
         self._vision_backbone = backbone
         self._preprocessor = preprocessor
 
@@ -265,5 +289,7 @@ class ImageCaptionInferenceModel(DecoderInferenceModel):
             image = Image.open(image)
 
         preprocessed: Tensor = self.preprocessor(image).to(self.device)
-        encoded = encode_image_tensor(preprocessed.unsqueeze(0), self.vision_backbone)
+        encoded = encode_image_tensor(
+            preprocessed.unsqueeze(0), self.vision_backbone
+        )
         return super().__call__(encoded, max_len=max_len, beam_size=beam_size)
