@@ -106,6 +106,7 @@ def load_vision_backbone(
         imagebind = torch.load(V2_PATH)
         imagebind.eval()
         imagebind.to(device)
+        print(f"Loaded {backbone} model from {V2_PATH}")
         return imagebind, load_and_transform_vision_data
 
     else:
