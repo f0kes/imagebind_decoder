@@ -26,6 +26,7 @@ VAL_JSON = "annotations/captions_val2014.json"
 
 
 def _download_coco_captions_json(cache_dir: str):
+    os.makedirs(cache_dir, exist_ok=True)
     zip_path = os.path.join(cache_dir, "annotations.zip")
     if not os.path.exists(zip_path):
         print("Downloading COCO Captions annotations.")
@@ -111,7 +112,7 @@ class ParallelImageEncoder(IterDataPipe):
 
 
 def coco_captions_datapipe(
-    cache_dir: str = "/coco-captions",
+    cache_dir: str = "./coco-captions",
     split: str = "train",
     buffer_size: int = 128,
 ) -> IterDataPipe:
