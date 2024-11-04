@@ -111,7 +111,7 @@ class ParallelImageEncoder(IterDataPipe):
 
 
 def coco_captions_datapipe(
-    cache_dir: str = "./coco-captions",
+    cache_dir: str = "/coco-captions",
     split: str = "train",
     buffer_size: int = 128,
 ) -> IterDataPipe:
