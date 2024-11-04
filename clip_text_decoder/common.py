@@ -128,7 +128,7 @@ def load_vision_backbone(
 
 
 def encode_image_tensor(image: Tensor, backbone: nn.Module) -> Tensor:
-
+    print(f"Encoding image with {backbone.__class__.__name__}...")
     if isinstance(backbone, ImageBindModel):
         inputs = {
             ModalityType.VISION: image,
@@ -143,6 +143,7 @@ def encode_image_tensor(image: Tensor, backbone: nn.Module) -> Tensor:
             ModalityType.VISION: image,
         }
         embeddings = backbone(inputs)
+        print(f"embedding shape: {embeddings[ModalityType.VISION].shape}")
 
         return embeddings[ModalityType.VISION]
 
