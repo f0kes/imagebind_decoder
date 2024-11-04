@@ -86,7 +86,7 @@ class CocoCaptionsDataset(CachedDataset):
     def build(
         cls,
         vision_backbone: str = "imagebind",
-        root: str = "/coco-captions",
+        root: str = "./coco-captions",
         split: str = "train",
         force_rebuild: bool = False,
     ) -> CocoCaptionsDataset:
