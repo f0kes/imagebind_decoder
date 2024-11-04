@@ -68,8 +68,8 @@ class Decoder(LightningModule):
             dtype=encoder_hidden_states.dtype,
             device=encoder_hidden_states.device,
         )
-        hidden[:, :, :num_features] = encoder_hidden_states
         projected_states = self.projection(encoder_hidden_states)
+        hidden[:, :, :num_features] = projected_states
 
         return self.language_model(
             input_ids=input_ids,
