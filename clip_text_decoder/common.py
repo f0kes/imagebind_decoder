@@ -110,9 +110,21 @@ def load_vision_backbone(
         return imagebind, load_and_transform_vision_data
 
     else:
-        # Currently, all other supported backbones are CLIP
-        _, name = backbone.split(":")
-        return clip.load(name, device=device, jit=False)
+        # we mast return
+        #   model: nn.Module
+        #   preprocessor: Callable[[Image.Image], Tensor]
+        if not os.path.exists(V2_PATH):
+            os.makedirs(os.path.dirname(V2_PATH), exist_ok=True)
+            torch.hub.download_url_to_file(
+                "https://huggingface.co/jondurbin/videobind-v0.2/resolve/main/videobind.pth",
+                V2_PATH,
+                progress=True,
+            )
+        imagebind = torch.load(V2_PATH)
+        imagebind.eval()
+        imagebind.to(device)
+        print(f"Loaded {backbone} model from {V2_PATH}")
+        return imagebind, load_and_transform_vision_data
 
 
 def encode_image_tensor(image: Tensor, backbone: nn.Module) -> Tensor:
