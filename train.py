@@ -165,7 +165,6 @@ if __name__ == "__main__":
     )
 
     if not args.eval_only:
-        # Save the inference model to our experiment logs directory.
         assert trainer.log_dir is not None
         inference_model_path = os.path.join(trainer.log_dir, "model.pt")
         decoder.save(inference_model_path)

@@ -134,12 +134,17 @@ def encode_image_tensor(image: Tensor, backbone: nn.Module) -> Tensor:
             ModalityType.VISION: image,
         }
         embeddings = backbone(inputs)
+        print(f"embedding shape: {embeddings[ModalityType.VISION].shape}")
 
-        return embeddings
+        return embeddings[ModalityType.VISION]
     else:
         # Currently, all other supported backbones are CLIP
-        assert isinstance(backbone, CLIP)
-        return backbone.encode_image(image)
+        inputs = {
+            ModalityType.VISION: image,
+        }
+        embeddings = backbone(inputs)
+
+        return embeddings[ModalityType.VISION]
 
 
 def load_and_transform_vision_data(image: Image.Image):
