@@ -8,7 +8,7 @@ services:
     volumes:
       - ./lightning_logs:/models
     environment:
-      - CHECKPOINT_PATH=/models/version_1/model.pt
+      - CHECKPOINT_PATH=/models/version_8/model.pt
     deploy:
       resources:
         reservations:
