@@ -5,6 +5,7 @@ import os
 from clip_text_decoder.model import DecoderInferenceModel
 from clip_text_decoder.common import load_tokenizer
 from typing import Optional
+
 app = FastAPI()
 
 decoder = None
@@ -12,7 +13,7 @@ decoder = None
 
 # Define a Pydantic model for request validation
 class LoadModelRequest(BaseModel):
-    checkpoint_path: Optional[str]  = None
+    checkpoint_path: Optional[str] = None
 
 
 class PredictRequest(BaseModel):
@@ -31,7 +32,7 @@ async def load_model(request: LoadModelRequest):
         decoder = DecoderInferenceModel.load(path)
         device = torch.device("cuda")
         decoder.to(device=device)
-        return {"status": "Model loaded successfully"}
+        return {"status": path}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
