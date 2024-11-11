@@ -25,7 +25,7 @@ class PredictRequest(BaseModel):
 async def load_model(request: LoadModelRequest):
     global decoder
     try:
-        path = os.getenv("CHECKPOINT_PATH", "/models/version_1/model.pt")
+        path = os.getenv("CHECKPOINT_PATH", "/models/version_8/model.pt")
         if request.checkpoint_path and os.path.exists(request.checkpoint_path):
             path = request.checkpoint_path
         decoder = DecoderInferenceModel.load(path)
