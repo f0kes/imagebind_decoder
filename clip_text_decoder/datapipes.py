@@ -136,3 +136,4 @@ if __name__ == "__main__":
 
     for _ in tqdm(pipe.batch(32)):
         pass
+        
