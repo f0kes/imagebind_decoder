@@ -16,13 +16,10 @@ from clip_text_decoder.common import (
     check_language_model,
     check_vision_backbone,
     encode_image_tensor,
+    generate_text_embeddings,
+    generate_text_embeddings_batch,
     load_language_model,
     load_vision_backbone,
-)
-
-PRETRAINED_INFERENCE_MODEL_PATH = (
-    "https://drive.google.com/uc?id=1bEAyV2279C4V4iYMaJahREiM58vjy6G1"
-    # https://drive.google.com/file/d/1bEAyV2279C4V4iYMaJahREiM58vjy6G1/view?usp=sharing
 )
 
 
@@ -34,15 +31,19 @@ class Decoder(LightningModule):
         input_dim: int = 1024,
         hidden_dim: int = 768,
         device: Optional[Union[str, torch.device]] = None,
+        tokenizer: Optional[GPT2Tokenizer] = None,
     ):
         super().__init__()
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
-
-        self.save_hyperparameters()
-
-        self.vision_backbone = vision_backbone
-        check_language_model(language_model)
+        self.tokenizer = tokenizer or GPT2Tokenizer.from_pretrained(
+            language_model
+        )
+        backbone, preprocessor = load_vision_backbone(
+            self.model.vision_backbone
+        )
+        self.vision_backbone = backbone
+        self.preprocessor = preprocessor
         self.language_model = load_language_model(language_model, device=device)
         self.projection = nn.Sequential(
             nn.Linear(input_dim, (input_dim + hidden_dim) // 2),
@@ -83,12 +84,35 @@ class Decoder(LightningModule):
 
     def training_step(self, batch: Tuple[Tensor, Tensor, Tensor], *_) -> Tensor:
         encoder_hidden_states, input_ids, attention_mask = batch
+
         result = self.forward(
             input_ids=input_ids,
             encoder_hidden_states=encoder_hidden_states,
             attention_mask=attention_mask,
             labels=input_ids,
         )
+
+        predictions = result.logits.argmax(-1)
+        texts = self.tokenizer.batch_decode(
+            predictions, skip_special_tokens=True
+        )
+
+        with torch.no_grad():
+            all_embs = generate_text_embeddings_batch(
+                texts,
+                self.vision_backbone,
+                batch_size=32,  # Adjust based on your memory constraints
+            )
+
+        cos_loss = (
+            1
+            - F.cosine_similarity(
+                all_embs, encoder_hidden_states.mean(dim=1)
+            ).mean()
+        )
+
+        # Combine losses
+        total_loss = cos_loss
 
         self.log(
             "training_loss",
@@ -97,13 +121,26 @@ class Decoder(LightningModule):
             on_epoch=True,
             sync_dist=True,
         )
-        return result.loss
+        self.log(
+            "cosine_loss",
+            cos_loss,
+            on_step=False,
+            on_epoch=True,
+            sync_dist=True,
+        )
+        self.log(
+            "total_loss",
+            total_loss,
+            on_step=False,
+            on_epoch=True,
+            sync_dist=True,
+        )
 
-    @torch.no_grad()
-    def validation_step(
-        self, batch: Tuple[Tensor, Tensor, Tensor], *_
-    ) -> Tensor:
+        return total_loss @ torch.no_grad()
+
+    def validation_step(self, batch: Tuple[Tensor, Tensor, Tensor], *_) -> Tensor:
         encoder_hidden_states, input_ids, attention_mask = batch
+
         result = self.forward(
             input_ids=input_ids,
             encoder_hidden_states=encoder_hidden_states,
@@ -111,14 +148,51 @@ class Decoder(LightningModule):
             labels=input_ids,
         )
 
+        predictions = result.logits.argmax(-1)
+        texts = self.tokenizer.batch_decode(
+            predictions, skip_special_tokens=True
+        )
+
+        with torch.no_grad():
+            all_embs = generate_text_embeddings_batch(
+                texts,
+                self.vision_backbone,
+                batch_size=32,  # Adjust based on your memory constraints
+            )
+
+        cos_loss = (
+            1
+            - F.cosine_similarity(
+                all_embs, encoder_hidden_states.mean(dim=1)
+            ).mean()
+        )
+
+        # Combine losses
+        total_loss = cos_loss
+
         self.log(
-            "validation_loss",
+            "validation_training_loss",
             result.loss,
             on_step=False,
             on_epoch=True,
             sync_dist=True,
         )
-        return result.loss
+        self.log(
+            "validation_cosine_loss",
+            cos_loss,
+            on_step=False,
+            on_epoch=True,
+            sync_dist=True,
+        )
+        self.log(
+            "validation_total_loss",
+            total_loss,
+            on_step=False,
+            on_epoch=True,
+            sync_dist=True,
+        )
+
+        return total_loss @ torch.no_grad()
 
 
 class DecoderInferenceModel:
@@ -167,7 +241,9 @@ class DecoderInferenceModel:
 
     @torch.cuda.amp.autocast()
     @torch.no_grad()
-    def __call__(self, x: Tensor, max_len: int = 64, beam_size: int = 1) -> str:
+    def __call__(
+        self, x: Tensor, max_len: int = 1024, beam_size: int = 1
+    ) -> str:
         """Inference using beam search. For beam search, we predict one token per step.
         After each step, we keep only the 'beam_size' output sequences with the highest
         end-to-end confidence score. Repeat this process until at most 'max_len' tokens

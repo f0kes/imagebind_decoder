@@ -124,6 +124,7 @@ if __name__ == "__main__":
         model = Decoder(
             vision_backbone=args.vision_backbone,
             language_model=args.language_model,
+            tokenizer=get_tokenizer(args.language_model),
         )
 
     if not args.eval_only:
@@ -146,7 +147,7 @@ if __name__ == "__main__":
         train_dataset = load_coco_captions(args.vision_backbone, split="train")
         first_embedding = next(iter(train_dataset))[0]
         print(f"Embedding size: {first_embedding.shape}")
-        
+
         val_dataset = load_coco_captions(args.vision_backbone, split="val")
         # Train the model, and then load the best-performing state dictionary.
         trainer.fit(
