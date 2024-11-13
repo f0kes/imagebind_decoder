@@ -132,7 +132,7 @@ if __name__ == "__main__":
             max_epochs=args.max_epochs,
             accelerator="auto",
             devices="auto",
-            strategy=strategies.DDPStrategy(find_unused_parameters=False),
+            strategy=strategies.DDPStrategy(find_unused_parameters=True),
             precision=args.precision,
             accumulate_grad_batches=args.accumulate_grad_batches,
             logger=True,

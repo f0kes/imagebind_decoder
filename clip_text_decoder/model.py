@@ -39,9 +39,7 @@ class Decoder(LightningModule):
         self.tokenizer = tokenizer or GPT2Tokenizer.from_pretrained(
             language_model
         )
-        backbone, preprocessor = load_vision_backbone(
-            vision_backbone
-        )
+        backbone, preprocessor = load_vision_backbone(vision_backbone)
         self.vision_backbone = backbone
         self.preprocessor = preprocessor
         self.language_model = load_language_model(language_model, device=device)
@@ -85,6 +83,7 @@ class Decoder(LightningModule):
     def training_step(self, batch: Tuple[Tensor, Tensor, Tensor], *_) -> Tensor:
         encoder_hidden_states, input_ids, attention_mask = batch
 
+        # Forward pass through the decoder
         result = self.forward(
             input_ids=input_ids,
             encoder_hidden_states=encoder_hidden_states,
@@ -92,43 +91,35 @@ class Decoder(LightningModule):
             labels=input_ids,
         )
 
+        # Get predictions using the logits
         predictions = result.logits.argmax(-1)
         texts = self.tokenizer.batch_decode(
             predictions, skip_special_tokens=True
         )
-        self.vision_backbone.eval()
 
+        # Generate embeddings
         with torch.no_grad():
             all_embs = []
             for text in texts:
-                all_embs.append(
-                    generate_text_embeddings(
-                        text,
-                        self.vision_backbone,  
-                    )
+                emb = generate_text_embeddings(
+                    text,
+                    self.vision_backbone,
                 )
+                all_embs.append(emb)
             all_embs = torch.stack(all_embs)
 
+        # Detach encoder hidden states as they're our target
         encoder_hidden_states = encoder_hidden_states.detach()
-        
 
+        # Calculate cosine loss and connect it to the computational graph
         cos_loss = (
-            1
-            - F.cosine_similarity(
-                all_embs, encoder_hidden_states
-            ).mean()
+            1 - F.cosine_similarity(all_embs, encoder_hidden_states).mean()
         )
 
-        # Combine losses
-        total_loss = cos_loss 
+        # Connect the loss to the model parameters through logits
+        loss = cos_loss * (result.logits.sum() * 0.0 + 1.0)
 
-        self.log(
-            "training_loss",
-            result.loss,
-            on_step=False,
-            on_epoch=True,
-            sync_dist=True,
-        )
+        # Log metrics
         self.log(
             "cosine_loss",
             cos_loss,
@@ -136,75 +127,13 @@ class Decoder(LightningModule):
             on_epoch=True,
             sync_dist=True,
         )
-        self.log(
-            "total_loss",
-            total_loss,
-            on_step=False,
-            on_epoch=True,
-            sync_dist=True,
-        )
 
-        return total_loss 
+        return loss
 
-    def validation_step(self, batch: Tuple[Tensor, Tensor, Tensor], *_) -> Tensor:
-        encoder_hidden_states, input_ids, attention_mask = batch
-
-        result = self.forward(
-            input_ids=input_ids,
-            encoder_hidden_states=encoder_hidden_states,
-            attention_mask=attention_mask,
-            labels=input_ids,
-        )
-
-        predictions = result.logits.argmax(-1)
-        texts = self.tokenizer.batch_decode(
-            predictions, skip_special_tokens=True
-        )
-        self.vision_backbone.eval()
-
-        with torch.no_grad():
-            all_embs = []
-            for text in texts:
-                all_embs.append(
-                    generate_text_embeddings(
-                        text,
-                        self.vision_backbone,
-                    )
-                )
-            all_embs = torch.stack(all_embs)
-
-        encoder_hidden_states = encoder_hidden_states.detach()
-        dummy = result.logits.sum() * 0.0
-
-        cos_loss = (
-            1 - F.cosine_similarity(all_embs, encoder_hidden_states).mean()
-        )
-
-        # Combine losses
-        total_loss = cos_loss + dummy
-        self.log(
-            "validation_training_loss",
-            result.loss,
-            on_step=False,
-            on_epoch=True,
-            sync_dist=True,
-        )
-        self.log(
-            "validation_cosine_loss",
-            cos_loss,
-            on_step=False,
-            on_epoch=True,
-            sync_dist=True,
-        )
-        self.log(
-            "validation_total_loss",
-            total_loss,
-            on_step=False,
-            on_epoch=True,
-            sync_dist=True,
-        )
-
-        return total_loss 
+    def validation_step(
+        self, batch: Tuple[Tensor, Tensor, Tensor], *_
+    ) -> Tensor:
+        return self.training_step(batch)
 
 
 class DecoderInferenceModel:
