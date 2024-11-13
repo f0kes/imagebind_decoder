@@ -110,7 +110,7 @@ class Decoder(LightningModule):
             all_embs = torch.stack(all_embs)
 
         encoder_hidden_states = encoder_hidden_states.detach()
-        dummy = result.logits.sum() * 0.0
+        
 
         cos_loss = (
             1
@@ -120,7 +120,7 @@ class Decoder(LightningModule):
         )
 
         # Combine losses
-        total_loss = cos_loss + dummy 
+        total_loss = cos_loss 
 
         self.log(
             "training_loss",
