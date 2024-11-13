@@ -121,7 +121,7 @@ class Decoder(LightningModule):
 
         # Log metrics
         self.log(
-            "cosine_loss",
+            "train_loss",
             cos_loss,
             on_step=False,
             on_epoch=True,
@@ -130,10 +130,19 @@ class Decoder(LightningModule):
 
         return loss
 
-    def validation_step(
-        self, batch: Tuple[Tensor, Tensor, Tensor], *_
-    ) -> Tensor:
-        return self.training_step(batch)
+
+    def validation_step(self, batch: Tuple[Tensor, Tensor, Tensor], *_) -> Tensor:
+        loss = self.training_step(batch)
+        # Log validation loss specifically
+        self.log(
+            "validation_loss",  # This is what EarlyStopping is looking for
+            loss,
+            on_step=False,
+            on_epoch=True,
+            sync_dist=True,
+            prog_bar=True,
+        )
+        return loss
 
 
 class DecoderInferenceModel:
