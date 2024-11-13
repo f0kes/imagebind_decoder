@@ -13,7 +13,10 @@ from torchdata.datapipes.iter import IterableWrapper
 from tqdm import tqdm
 
 from clip_text_decoder.common import check_vision_backbone
-from clip_text_decoder.datapipes import ParallelImageEncoder, coco_captions_datapipe
+from clip_text_decoder.datapipes import (
+    ParallelImageEncoder,
+    coco_captions_datapipe,
+)
 
 COCO_ANNOTATIONS_URL = (
     "http://images.cocodataset.org/annotations/annotations_trainval2014.zip"
@@ -31,7 +34,6 @@ CACHE_URLS = {
         "val": "https://drive.google.com/uc?id=11l6b9rol53FAZe4EhvlgiwrsD4qfUUdj",
         # https://drive.google.com/file/d/11l6b9rol53FAZe4EhvlgiwrsD4qfUUdj/view?usp=sharing
     },
-    
 }
 
 
@@ -90,10 +92,22 @@ class CocoCaptionsDataset(CachedDataset):
         split: str = "train",
         force_rebuild: bool = False,
     ) -> CocoCaptionsDataset:
-        
+
         if force_rebuild or vision_backbone not in CACHE_URLS:
-            pipe = coco_captions_datapipe(cache_dir=root, split=split) #loads of images
-            cached_dataset = build_cached_dataset(pipe, vision_backbone=vision_backbone)
+            cache_path = os.path.join(root, f"{vision_backbone}_{split}.pkl")
+            if os.path.exists(cache_path):
+                return CocoCaptionsDataset(
+                    data=CachedDataset.load(cache_path).data
+                )
+            pipe = coco_captions_datapipe(
+                cache_dir=root, split=split
+            )  # loads of images
+            cached_dataset = build_cached_dataset(
+                pipe, vision_backbone=vision_backbone
+            )
+            cached_dataset.save(
+                os.path.join(root, f"{vision_backbone}_{split}.pkl")
+            )
             return CocoCaptionsDataset(data=cached_dataset.data)
         else:
             url_by_split = CACHE_URLS[vision_backbone]
