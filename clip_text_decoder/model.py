@@ -40,7 +40,7 @@ class Decoder(LightningModule):
             language_model
         )
         backbone, preprocessor = load_vision_backbone(
-            self.model.vision_backbone
+            vision_backbone
         )
         self.vision_backbone = backbone
         self.preprocessor = preprocessor
