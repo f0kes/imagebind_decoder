@@ -98,16 +98,21 @@ class Decoder(LightningModule):
         )
 
         with torch.no_grad():
-            all_embs = generate_text_embeddings_batch(
-                texts,
-                self.vision_backbone,
-                batch_size=32,  # Adjust based on your memory constraints
-            )
-
+            all_embs = []
+            for text in texts:
+                all_embs.append(
+                    generate_text_embeddings(
+                        text,
+                        self.vision_backbone,  
+                    )
+                )
+            all_embs = torch.stack(all_embs)
+        print(f"Encoder hidden states shape: {encoder_hidden_states.shape}")
+        print(f"Generated text embeddings shape: {all_embs.shape}")
         cos_loss = (
             1
             - F.cosine_similarity(
-                all_embs, encoder_hidden_states.mean(dim=1)
+                all_embs, encoder_hidden_states
             ).mean()
         )
 
@@ -154,17 +159,19 @@ class Decoder(LightningModule):
         )
 
         with torch.no_grad():
-            all_embs = generate_text_embeddings_batch(
-                texts,
-                self.vision_backbone,
-                batch_size=32,  # Adjust based on your memory constraints
-            )
-
+            all_embs = []
+            for text in texts:
+                all_embs.append(
+                    generate_text_embeddings(
+                        text,
+                        self.vision_backbone,
+                    )
+                )
+            all_embs = torch.stack(all_embs)
+        print(f"Encoder hidden states shape: {encoder_hidden_states.shape}")
+        print(f"Generated text embeddings shape: {all_embs.shape}")
         cos_loss = (
-            1
-            - F.cosine_similarity(
-                all_embs, encoder_hidden_states.mean(dim=1)
-            ).mean()
+            1 - F.cosine_similarity(all_embs, encoder_hidden_states).mean()
         )
 
         # Combine losses
