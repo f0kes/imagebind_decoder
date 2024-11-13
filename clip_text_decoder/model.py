@@ -141,7 +141,7 @@ class Decoder(LightningModule):
             sync_dist=True,
         )
 
-        return total_loss @ torch.no_grad()
+        return total_loss 
 
     def validation_step(self, batch: Tuple[Tensor, Tensor, Tensor], *_) -> Tensor:
         encoder_hidden_states, input_ids, attention_mask = batch
@@ -199,7 +199,7 @@ class Decoder(LightningModule):
             sync_dist=True,
         )
 
-        return total_loss @ torch.no_grad()
+        return total_loss 
 
 
 class DecoderInferenceModel:
