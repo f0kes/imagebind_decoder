@@ -275,36 +275,33 @@ def generate_text_embeddings_batch(
 ) -> torch.Tensor:
     """
     Generate embeddings for a batch of texts efficiently.
-
     Args:
         texts: List of text strings to process
         imagebind: ImageBind model instance
         device: Device to process on
         batch_size: Size of internal processing batches
-
     Returns:
         Tensor of shape (len(texts), embedding_dim) containing mean embeddings
     """
     all_embeddings = []
-
     # Process texts in batches
     for i in range(0, len(texts), batch_size):
         batch_texts = texts[i : i + batch_size]
-
         # Transform all texts in current batch
         batch_chunks = [
             load_and_transform_text_chunks(text, device) for text in batch_texts
         ]
-
         # Flatten chunks to process them all at once
         flat_chunks = [chunk for chunks in batch_chunks for chunk in chunks]
 
-        # Process all chunks in one forward pass
         if flat_chunks:  # Check if there are any chunks to process
+            # Stack chunks into a single tensor
+            stacked_chunks = torch.stack(flat_chunks, dim=0)
+
             with torch.no_grad():  # No need for gradients during embedding generation
-                batch_embeddings = imagebind({ModalityType.TEXT: flat_chunks})[
-                    ModalityType.TEXT
-                ]
+                batch_embeddings = imagebind(
+                    {ModalityType.TEXT: stacked_chunks}
+                )[ModalityType.TEXT]
 
             # Reshape and mean over chunks for each text
             chunk_idx = 0
@@ -321,7 +318,6 @@ def generate_text_embeddings_batch(
                     chunk_idx += num_chunks
         else:
             # Handle empty chunks case
-            # You might want to adjust this based on your needs
             embedding_dim = (
                 imagebind.embedding_dim
             )  # Adjust this based on your model
